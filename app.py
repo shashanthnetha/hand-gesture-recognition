@@ -17,6 +17,15 @@ from PIL import Image, UnidentifiedImageError
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.models import load_model
 
+try:  # Hugging Face ZeroGPU Spaces require at least one @spaces.GPU function
+    import spaces
+
+    @spaces.GPU
+    def _gpu_noop():
+        return None
+except ImportError:  # not on Hugging Face
+    pass
+
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "hand_gesture_model.keras"
 CLASS_NAMES_PATH = BASE_DIR / "class_names.json"
@@ -39,7 +48,8 @@ def _compat_model_path():
     renorm*, quantization_config). We strip those from config.json; the
     weights are untouched. The patched copy is cached next to the model.
     """
-    patched = BASE_DIR / "hand_gesture_model.compat.keras"
+    import tempfile
+    patched = Path(tempfile.gettempdir()) / "hand_gesture_model.compat.keras"
     if patched.is_file():
         return patched
     drop = {"GlorotUniform": ("input_axes", "output_axes"),
@@ -174,6 +184,9 @@ with gr.Blocks(title="Live Hand Gesture Recognition") as demo:
         predict_button = gr.Button("Predict image", variant="primary")
         still_label = gr.Textbox(label="Prediction")
         still_scores = gr.Label(num_top_classes=5, label="Class probabilities")
+        _ex = [str(p) for p in sorted((BASE_DIR / "examples").glob("*.jpg"))]
+        if _ex:
+            gr.Examples(examples=_ex, inputs=image_input, label="Examples")
         predict_button.click(
             fn=classify_still,
             inputs=image_input,
