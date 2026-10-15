@@ -70,7 +70,7 @@ def _compat_model_path():
 def _assemble_model_parts():
     """GitHub's web uploader caps files near 25 MB, so the model may be
     stored as hand_gesture_model.keras.part00, .part01, ... Join them."""
-    parts = sorted(BASE_DIR.glob("hand_gesture_model.keras.part*"))
+    parts = sorted(BASE_DIR.glob("*hand_gesture_model.keras.part*"))
     if parts and not MODEL_PATH.is_file():
         with MODEL_PATH.open("wb") as out:
             for p in parts:
